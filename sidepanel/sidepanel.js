@@ -5,9 +5,11 @@ const colorSchemeParam = darkMode ? "darkschemeovr" : "lightschemeovr";
 
 iframe.src = `https://copilot.microsoft.com/`
 
+const COPILOT_ORIGIN = "https://copilot.microsoft.com";
+
 function sendEventToIframe(name, args) {
   console.debug("sendEventToIframe", name, JSON.stringify(args));
-  iframe.contentWindow.postMessage({ eventName: name, eventArgs: args }, "*");
+  iframe.contentWindow.postMessage({ eventName: name, eventArgs: args }, COPILOT_ORIGIN);
 }
 
 async function getActiveTab() {
@@ -33,6 +35,7 @@ function buildActiveTabInfo(tab) {
 let chatPageInitialized = false;
 
 async function postMessageListner(event) {
+  if (event.origin !== COPILOT_ORIGIN) return;
   console.debug("onMessage", event.origin, JSON.stringify(event.data));
   const eventName = event.data.eventName;
   if (eventName === "Discover.Chat.Interact.Req") {

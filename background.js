@@ -11,6 +11,8 @@ if (chrome.sidePanel) {
   });
 }
 
+// Chỉ giả mạo User-Agent thành Edge cho đúng các domain cần thiết,
+// KHÔNG xóa CSP hay X-Frame-Options (rules/bing.json đã xử lý riêng cho iframe copilot).
 chrome.declarativeNetRequest.updateDynamicRules({
   removeRuleIds: [1],
   addRules: [
@@ -32,22 +34,11 @@ chrome.declarativeNetRequest.updateDynamicRules({
             value: '"Microsoft Edge";v="111", "Not(A:Brand";v="8", "Chromium";v="111"',
           },
         ],
-        responseHeaders: [
-          { header: "x-frame-options", operation: "remove" },
-          { header: "content-security-policy", operation: "remove" },
-        ],
       },
       condition: {
-        urlFilter: "bing",
-        isUrlFilterCaseSensitive: false,
+        requestDomains: ["bing.com", "copilot.microsoft.com"],
         resourceTypes: ["main_frame", "sub_frame", "xmlhttprequest", "websocket"],
       },
     },
   ],
-});
-
-chrome.runtime.onInstalled.addListener((details) => {
-  if (details.reason === "install") {
-    chrome.tabs.create({ url: "https://bing-sidebar.com/setup" });
-  }
 });
