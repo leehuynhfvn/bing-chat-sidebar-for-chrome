@@ -5,14 +5,26 @@
     "action": {
       "type": "modifyHeaders",
       "responseHeaders": [
-        {
-          "header": "content-security-policy",
-          "operation": "remove"
-        }
+        { "header": "content-security-policy", "operation": "remove" }
       ]
     },
     "condition": {
       "requestDomains": ["copilot.microsoft.com"],
+      "resourceTypes": ["sub_frame"]
+    }
+  },
+  {
+    "id": 4,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        { "header": "x-frame-options", "operation": "remove" },
+        { "header": "content-security-policy", "operation": "remove" }
+      ]
+    },
+    "condition": {
+      "requestDomains": ["m365.cloud.microsoft"],
       "resourceTypes": ["sub_frame"]
     }
   }

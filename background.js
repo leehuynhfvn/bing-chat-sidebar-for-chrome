@@ -36,7 +36,7 @@ chrome.declarativeNetRequest.updateDynamicRules({
         ],
       },
       condition: {
-        requestDomains: ["bing.com", "copilot.microsoft.com"],
+        requestDomains: ["bing.com", "copilot.microsoft.com", "m365.cloud.microsoft"],
         resourceTypes: ["main_frame", "sub_frame", "xmlhttprequest", "websocket"],
       },
     },

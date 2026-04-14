@@ -5,11 +5,18 @@ const colorSchemeParam = darkMode ? "darkschemeovr" : "lightschemeovr";
 
 iframe.src = `https://copilot.microsoft.com/`
 
-const COPILOT_ORIGIN = "https://copilot.microsoft.com";
+// Cho phép cả 2 domain Microsoft — tài khoản M365 sẽ redirect sang m365.cloud.microsoft
+const ALLOWED_ORIGINS = new Set([
+  "https://copilot.microsoft.com",
+  "https://m365.cloud.microsoft",
+]);
 
 function sendEventToIframe(name, args) {
   console.debug("sendEventToIframe", name, JSON.stringify(args));
-  iframe.contentWindow.postMessage({ eventName: name, eventArgs: args }, COPILOT_ORIGIN);
+  // Gửi đến cả 2 origin — browser sẽ tự bỏ qua message nếu iframe đang ở origin khác
+  for (const origin of ALLOWED_ORIGINS) {
+    iframe.contentWindow.postMessage({ eventName: name, eventArgs: args }, origin);
+  }
 }
 
 async function getActiveTab() {
@@ -35,7 +42,7 @@ function buildActiveTabInfo(tab) {
 let chatPageInitialized = false;
 
 async function postMessageListner(event) {
-  if (event.origin !== COPILOT_ORIGIN) return;
+  if (!ALLOWED_ORIGINS.has(event.origin)) return;
   console.debug("onMessage", event.origin, JSON.stringify(event.data));
   const eventName = event.data.eventName;
   if (eventName === "Discover.Chat.Interact.Req") {
