@@ -1,9 +1,10 @@
 const iframe = document.getElementById("underside-iframe-container");
+const statusEl = document.getElementById("status-msg");
+const btnPageContext = document.getElementById("btn-page-context");
 
 const darkMode = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-const colorSchemeParam = darkMode ? "darkschemeovr" : "lightschemeovr";
 
-iframe.src = `https://copilot.microsoft.com/`
+iframe.src = "https://copilot.microsoft.com/";
 
 // Cho phép cả 2 domain Microsoft — tài khoản M365 sẽ redirect sang m365.cloud.microsoft
 const ALLOWED_ORIGINS = new Set([
@@ -11,9 +12,17 @@ const ALLOWED_ORIGINS = new Set([
   "https://m365.cloud.microsoft",
 ]);
 
+// Giới hạn nội dung trang gửi cho Copilot (~8000 ký tự là đủ để tóm tắt)
+const PAGE_TEXT_LIMIT = 8000;
+
+function setStatus(msg, type = "", duration = 4000) {
+  statusEl.textContent = msg;
+  statusEl.className = type;
+  if (duration > 0) setTimeout(() => { statusEl.textContent = ""; statusEl.className = ""; }, duration);
+}
+
 function sendEventToIframe(name, args) {
-  console.debug("sendEventToIframe", name, JSON.stringify(args));
-  // Gửi đến cả 2 origin — browser sẽ tự bỏ qua message nếu iframe đang ở origin khác
+  // Gửi đến cả 2 origin — browser tự bỏ qua nếu iframe đang ở origin khác
   for (const origin of ALLOWED_ORIGINS) {
     iframe.contentWindow.postMessage({ eventName: name, eventArgs: args }, origin);
   }
@@ -39,12 +48,47 @@ function buildActiveTabInfo(tab) {
   };
 }
 
+// --- Nút "Đọc trang này" ---
+btnPageContext.addEventListener("click", async () => {
+  const tab = await getActiveTab();
+  if (!tab) {
+    setStatus("Không tìm thấy tab hiện tại", "err");
+    return;
+  }
+
+  btnPageContext.disabled = true;
+  setStatus("Đang đọc trang...", "", 0);
+
+  try {
+    const response = await chrome.tabs.sendMessage(tab.id, { action: "getPageData" });
+    if (!response?.text) {
+      setStatus("Không đọc được nội dung trang", "err");
+      return;
+    }
+
+    const pageText = response.text.trim().slice(0, PAGE_TEXT_LIMIT);
+    const prompt = `Trang: ${tab.title}\nURL: ${tab.url}\n\nNội dung:\n${pageText}`;
+
+    // Thử gửi qua postMessage (hoạt động trên copilot.microsoft.com)
+    sendEventToIframe("Discover.Chat.Page", { text: response.text });
+
+    // Copy vào clipboard — fallback đáng tin cậy cho m365.cloud.microsoft
+    await navigator.clipboard.writeText(prompt);
+    setStatus("✓ Đã copy! Paste vào chat (Ctrl+V)", "ok");
+  } catch (err) {
+    setStatus("Lỗi: " + (err instanceof Error ? err.message : "Không rõ"), "err");
+  } finally {
+    btnPageContext.disabled = false;
+  }
+});
+
+// --- Xử lý postMessage từ iframe (copilot.microsoft.com) ---
 let chatPageInitialized = false;
 
 async function postMessageListner(event) {
   if (!ALLOWED_ORIGINS.has(event.origin)) return;
-  console.debug("onMessage", event.origin, JSON.stringify(event.data));
   const eventName = event.data.eventName;
+
   if (eventName === "Discover.Chat.Interact.Req") {
     sendEventToIframe("Discover.Chat.Interact.Rep", { status: true });
   } else if (eventName === "Discover.Chat.Consent.Req") {
