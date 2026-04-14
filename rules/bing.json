@@ -24,7 +24,14 @@
       ]
     },
     "condition": {
-      "requestDomains": ["m365.cloud.microsoft"],
+      "requestDomains": [
+        "m365.cloud.microsoft",
+        "login.microsoftonline.com",
+        "login.live.com",
+        "login.microsoft.com",
+        "account.microsoft.com",
+        "account.live.com"
+      ],
       "resourceTypes": ["sub_frame"]
     }
   }
