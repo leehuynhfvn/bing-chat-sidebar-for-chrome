@@ -25,7 +25,7 @@
         flex-shrink: 0;
       }
 
-      #btn-page-context {
+      .btn {
         display: flex;
         align-items: center;
         gap: 4px;
@@ -38,8 +38,8 @@
         white-space: nowrap;
         color: #333;
       }
-      #btn-page-context:hover { background: #e8e8e8; }
-      #btn-page-context:disabled { opacity: 0.5; cursor: default; }
+      .btn:hover { background: #e8e8e8; }
+      .btn:disabled { opacity: 0.5; cursor: default; }
 
       #status-msg {
         font-size: 11px;
@@ -51,6 +51,33 @@
       }
       #status-msg.ok  { color: #107c10; }
       #status-msg.err { color: #c50000; }
+      #status-msg.info { color: #0063b1; }
+
+      /* Banner hiển thị khi cần đăng nhập */
+      #login-banner {
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 8px 12px;
+        background: #fff4ce;
+        border-bottom: 1px solid #f0d060;
+        font-size: 12px;
+        color: #333;
+        flex-shrink: 0;
+      }
+      #login-banner.visible { display: flex; }
+      #btn-login {
+        padding: 4px 12px;
+        font-size: 12px;
+        background: #0078d4;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      #btn-login:hover { background: #106ebe; }
 
       iframe {
         flex: 1;
@@ -60,24 +87,35 @@
 
       @media (prefers-color-scheme: dark) {
         #toolbar { background: #2b2b2b; border-color: #444; }
-        #btn-page-context { background: #3a3a3a; border-color: #555; color: #eee; }
-        #btn-page-context:hover { background: #4a4a4a; }
+        .btn { background: #3a3a3a; border-color: #555; color: #eee; }
+        .btn:hover { background: #4a4a4a; }
         #status-msg { color: #aaa; }
-        #status-msg.ok  { color: #6ccb6c; }
-        #status-msg.err { color: #f87171; }
+        #status-msg.ok   { color: #6ccb6c; }
+        #status-msg.err  { color: #f87171; }
+        #status-msg.info { color: #60a5fa; }
+        #login-banner { background: #3a3000; border-color: #7a6000; color: #eee; }
+        #btn-login { background: #0078d4; }
+        #btn-login:hover { background: #106ebe; }
       }
     </style>
   </head>
   <body>
     <div id="toolbar">
-      <button id="btn-page-context">📄 Đọc trang này</button>
+      <button id="btn-page-context" class="btn">📄 Đọc trang này</button>
+      <button id="btn-reload" class="btn" title="Tải lại Copilot">↺</button>
       <span id="status-msg"></span>
     </div>
+
+    <div id="login-banner">
+      <span>⚠️ Cần đăng nhập Microsoft — mở tab mới để login, sau đó nhấn ↺</span>
+      <button id="btn-login">Đăng nhập</button>
+    </div>
+
     <iframe
       id="underside-iframe-container"
       name="underside-iframe-container"
       frameborder="0"
-      allow="clipboard-write; popups"
+      allow="clipboard-write"
     ></iframe>
     <script src="./sidepanel.js"></script>
   </body>

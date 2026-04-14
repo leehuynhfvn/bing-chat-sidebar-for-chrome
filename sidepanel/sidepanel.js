@@ -1,10 +1,11 @@
 const iframe = document.getElementById("underside-iframe-container");
 const statusEl = document.getElementById("status-msg");
 const btnPageContext = document.getElementById("btn-page-context");
+const btnReload = document.getElementById("btn-reload");
+const loginBanner = document.getElementById("login-banner");
+const btnLogin = document.getElementById("btn-login");
 
-const darkMode = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-
-iframe.src = "https://copilot.microsoft.com/";
+const COPILOT_URL = "https://copilot.microsoft.com/";
 
 // Cho phép cả 2 domain Microsoft — tài khoản M365 sẽ redirect sang m365.cloud.microsoft
 const ALLOWED_ORIGINS = new Set([
@@ -12,13 +13,38 @@ const ALLOWED_ORIGINS = new Set([
   "https://m365.cloud.microsoft",
 ]);
 
+// Domain login của Microsoft — MSAL không cho login trong iframe,
+// phải mở tab mới thay thế
+const LOGIN_DOMAINS = [
+  "login.microsoftonline.com",
+  "login.live.com",
+  "login.microsoft.com",
+];
+
 // Giới hạn nội dung trang gửi cho Copilot (~8000 ký tự là đủ để tóm tắt)
 const PAGE_TEXT_LIMIT = 8000;
 
+// --- Khởi tạo iframe ---
+iframe.src = COPILOT_URL;
+
+// --- Helpers ---
 function setStatus(msg, type = "", duration = 4000) {
   statusEl.textContent = msg;
   statusEl.className = type;
-  if (duration > 0) setTimeout(() => { statusEl.textContent = ""; statusEl.className = ""; }, duration);
+  if (duration > 0) {
+    setTimeout(() => { statusEl.textContent = ""; statusEl.className = ""; }, duration);
+  }
+}
+
+function showLoginBanner(loginUrl) {
+  loginBanner.classList.add("visible");
+  btnLogin.onclick = () => {
+    chrome.tabs.create({ url: loginUrl || COPILOT_URL });
+  };
+}
+
+function hideLoginBanner() {
+  loginBanner.classList.remove("visible");
 }
 
 function sendEventToIframe(name, args) {
@@ -47,6 +73,25 @@ function buildActiveTabInfo(tab) {
     pageLanguage: "",
   };
 }
+
+// --- Phát hiện iframe chuyển sang trang login ---
+// MSAL chặn redirect trong iframe, cần mở tab mới
+chrome.webNavigation.onCommitted.addListener((details) => {
+  if (details.frameType !== "sub_frame" && details.frameId === 0) return;
+  const url = new URL(details.url);
+  if (LOGIN_DOMAINS.some((d) => url.hostname.endsWith(d))) {
+    // Đưa iframe về trang chính, hiện banner hướng dẫn login
+    iframe.src = COPILOT_URL;
+    showLoginBanner(details.url);
+  }
+});
+
+// --- Nút Tải lại ---
+btnReload.addEventListener("click", () => {
+  hideLoginBanner();
+  iframe.src = COPILOT_URL;
+  chatPageInitialized = false;
+});
 
 // --- Nút "Đọc trang này" ---
 btnPageContext.addEventListener("click", async () => {
